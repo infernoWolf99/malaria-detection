@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import torch, os
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
@@ -80,7 +82,7 @@ class MainDataset(Dataset):
 
 
 class DataPrep:
-    def __init__(self, name: str, root_path: str, batch_size: int = 4, pin_memory: bool = False, num_workers: int= 2):
+    def __init__(self, name: str, root_path: Path, batch_size: int = 4, pin_memory: bool = False, num_workers: int= 2):
         self.root_path = root_path
         self.batch_size = batch_size
         self.name = name

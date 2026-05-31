@@ -1,0 +1,13 @@
+experiment_name: 'Trophozoite_and_WBC_Run'
+data:
+  path: '../data/trophozoite-wbc'
+model:
+  num_classes: 3
+  pre_trained: false
+hyperparameters:
+  batch_size: 4
+  lr: 0.005
+  num_workers: 2
+  pin_memory: False
+
+
