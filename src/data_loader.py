@@ -84,6 +84,8 @@ class DataPrep:
         self.root_path = root_path
         self.batch_size = batch_size
         self.name = name
+        self.num_workers = num_workers
+        self.pin_memory = pin_memory
 
     def build_datasets(self):
         # in case only the dataset is needed else where
@@ -115,11 +117,32 @@ class DataPrep:
 
     def build_loaders(self):
         collator = lambda x: tuple(zip(*x))
-        
+
         train_set, val_set, test_set = self.build_datasets()
-        
-        train_loader = DataLoader(train_set, batch_size=self.batch_size, shuffle=True, collate_fn=collator, num_workers=self.num_workers, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=self.batch_size, shuffle=False, collate_fn=collator, num_workers=2, pin_memory=True)
-        test_loader = DataLoader(test_set, batch_size=self.batch_size, shuffle=False, collate_fn=collator, num_workers=2, pin_memory=True)
+
+        train_loader = DataLoader(
+            train_set,
+            batch_size=self.batch_size,
+            shuffle=True,
+            collate_fn=collator,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+        )
+        val_loader = DataLoader(
+            val_set,
+            batch_size=self.batch_size,
+            shuffle=False,
+            collate_fn=collator,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory
+            )
+        test_loader = DataLoader(
+            test_set,
+            batch_size=self.batch_size,
+            shuffle=False,
+            collate_fn=collator,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+        )
 
         return train_loader, val_loader, test_loader
