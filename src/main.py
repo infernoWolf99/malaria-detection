@@ -85,18 +85,19 @@ def main():
 
     for epoch in range(num_epochs):
         results = t_wbc_trainer.run_epoch(epoch_idx=epoch)
-        
+
         run.log(
             {
                 "epoch": results["epoch"],
-                "train_loss": results["train_loss"],
+                "epoch/train_loss": results["train_loss"],
+                "epoch/val_loss": results["val_loss"],
                 "mAP_50": results["mAP_50"],
             }
         )
-        
+
         print("EPOCH RESULTS", results)
 
     run.finish()
-    
+
 if __name__ == "__main__":
     main()

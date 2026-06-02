@@ -38,7 +38,7 @@ def visualize_boxes(images, targets, class_mapping=None, max_images=4):
         ax_clean.imshow(img_np)
         ax_clean.axis("off")
         if i == 0:
-            ax_clean.set_title("Raw Blood Smear Image", fontsize=12, pad=10)
+            ax_clean.set_title("Raw Image", fontsize=12, pad=10)
 
         # 2. Right Plot: Image with Bounding Boxes
         ax_boxes = axes[i, 1]
