@@ -13,10 +13,10 @@ class RetinaNet:
         self.model = self._build_model()
 
     def _build_model(self):
+        weights = None
+        
         if self.pre_trained:
-            return RetinaNet_ResNet50_FPN_Weights.DEFAULT
-        else:
-            return None
+            weights = RetinaNet_ResNet50_FPN_Weights.DEFAULT
 
         model = torchvision.models.detection.retinanet_resnet50_fpn(
             weights=weights, num_classes=self.num_classes

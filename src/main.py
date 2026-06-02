@@ -1,8 +1,11 @@
 import argparse
 import os
 from pathlib import Path
+import torch
 import yaml
 from data_loader import DataPrep
+from models import RetinaNet
+from train import ModelTrainer
 
 
 def get_data_dir(path: Path = Path("../data")) -> Path:
@@ -50,6 +53,21 @@ def main():
     train, val, test = t_wbc_data.build_loaders();
 
     print("Beginning execution pipeline setup...")
+    retina_wrapper = RetinaNet(
+        num_classes=config["model"]["num_classes"], pre_trained=False
+    )
 
+    retina_model = retina_wrapper.get_model()
+        
+    t_wbc_trainer = ModelTrainer(model = retina_model, train_loader=train, val_loader=val, lr=config['hyperparameters']['lr'])
+    
+    num_epochs = config['hyperparameters']['num_epochs']
+    
+    
+    for epoch in range(num_epochs):
+        results = t_wbc_trainer.run_epoch(epoch_idx=epoch)
+        
+        print("EPOCH RESULTS", results)
+        
 if __name__ == "__main__":
     main()

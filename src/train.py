@@ -1,7 +1,7 @@
 import gc
 import torch
-from torch.amp.autocast_mode import autocast 
-from torch.amp.grad_scaler import GradScaler
+import torch.nn as nn
+from torch.amp import autocast, GradScaler
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from tqdm import tqdm
 
@@ -12,16 +12,16 @@ class ModelTrainer:
     """
 
     def __init__(
-        self, model: torch.nn.Module, train_loader, val_loader, lr: float = 0.005
+        self, model: nn.Module, train_loader, val_loader, lr: float = 0.005
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # Initialize and move model to device
+       
         self.model = model.to(self.device)
         self.train_loader = train_loader
         self.val_loader = val_loader
 
-        # Optimization tools
+        # optimizer
         self.optimizer = torch.optim.SGD(
             self.model.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005
         )
