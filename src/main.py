@@ -1,5 +1,5 @@
 import argparse
-import os
+import os, random, wandb
 from pathlib import Path
 import torch
 import yaml
@@ -7,6 +7,11 @@ from data_loader import DataPrep
 from models import RetinaNet
 from train import ModelTrainer
 
+
+# wandb api key
+os.environ["WANDB_API_KEY"] = (
+    "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"
+)
 
 def get_data_dir(path: Path = Path("../data")) -> Path:
     """
@@ -35,39 +40,63 @@ def main():
 
     # Load model configurations
     with open(args.config, "r") as f:
-        config = yaml.safe_load(f)
+        job_config = yaml.safe_load(f)
 
-    print(f"Loaded configuration: {config['experiment_name']}")
+    print(f"Loaded configuration: {job_config['experiment_name']}")
+
+    # initializing wandb
+    run = wandb.init(
+        # Set the wandb entity where your project will be logged (generally your team name).
+        entity="infernowolf99-university-for-development-studies",
+        # Set the wandb project where this run will be logged.
+        project="malaria-detection-testing",
+        # Track hyperparameters and run metadata.
+        config={
+            "learning_rate": job_config["hyperparameters"]["lr"],
+            "architecture": "RetinaNet",
+            "dataset": "Malaria-test",
+            "epochs": job_config["hyperparameters"]["num_epochs"],
+        },
+    )
 
     #  data paths
-    data_dir = get_data_dir(path=config["data"]["path"])
+    data_dir = get_data_dir(path=job_config["data"]["path"])
 
     t_wbc_data = DataPrep(
         name="Trophozoite plus WBC dataset",
         root_path=data_dir,
-        batch_size=config["hyperparameters"]["batch_size"],
-        pin_memory=config["hyperparameters"]["pin_memory"],
-        num_workers=config["hyperparameters"]["num_workers"],
+        batch_size=job_config["hyperparameters"]["batch_size"],
+        pin_memory=job_config["hyperparameters"]["pin_memory"],
+        num_workers=job_config["hyperparameters"]["num_workers"],
     )
 
     train, val, test = t_wbc_data.build_loaders();
 
     print("Beginning execution pipeline setup...")
     retina_wrapper = RetinaNet(
-        num_classes=config["model"]["num_classes"], pre_trained=False
+        num_classes=job_config["model"]["num_classes"], pre_trained=False
     )
 
     retina_model = retina_wrapper.get_model()
-        
-    t_wbc_trainer = ModelTrainer(model = retina_model, train_loader=train, val_loader=val, lr=config['hyperparameters']['lr'])
-    
-    num_epochs = config['hyperparameters']['num_epochs']
-    
-    
+
+    t_wbc_trainer = ModelTrainer(model = retina_model, train_loader=train, val_loader=val, lr=job_config['hyperparameters']['lr'])
+
+    num_epochs = job_config['hyperparameters']['num_epochs']
+
     for epoch in range(num_epochs):
         results = t_wbc_trainer.run_epoch(epoch_idx=epoch)
         
-        print("EPOCH RESULTS", results)
+        run.log(
+            {
+                "epoch": results["epoch"],
+                "train_loss": results["train_loss"],
+                "mAP_50": results["mAP_50"],
+            }
+        )
         
+        print("EPOCH RESULTS", results)
+
+    run.finish()
+    
 if __name__ == "__main__":
     main()
