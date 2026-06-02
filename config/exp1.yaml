@@ -1,6 +1,6 @@
 experiment_name: 'Trophozoite_and_WBC_Run'
 data:
-  path: '../data/trophozoite-wbc'
+  path: 'data/trophozoite-only'
 model:
   num_classes: 3
   pre_trained: false
