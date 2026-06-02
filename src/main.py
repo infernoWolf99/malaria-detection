@@ -58,7 +58,9 @@ def main():
             "epochs": job_config["hyperparameters"]["num_epochs"],
         },
     )
-
+    run.define_metric("epoch/train_loss", summary="min")
+    run.define_metric("epoch/val_loss", summary="min")
+    
     #  data paths
     data_dir = get_data_dir(path=job_config["data"]["path"])
 
