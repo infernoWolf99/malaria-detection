@@ -147,6 +147,28 @@ class ModelTrainer:
             best_path = os.path.join(self.checkpoint_file")
             torch.save(checkpoint_data, best_path)
             print(f"New best model saved with mAP@0.50: {self.best_mAP:.4f}")
+            
+            print(f"New best model saved with mAP@0.50: {self.best_mAP:.4f}")
+    
+    def load_checkpoint(self, checkpoint_file: str):
+        """Loads a saved state dictionary back into memory to resume training."""
+        
+        if not os.path.exists(checkpoint_file):
+            print(f"No checkpoint found at {checkpoint_file}. Starting from scratch.")
+            return 0
+            
+        print(f"Loading checkpoint from: {checkpoint_file}")
+        checkpoint = torch.load(checkpoint_file, map_location=self.device)
+        
+        # Restoring execution elements
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.scaler.load_state_dict(checkpoint['scaler_state_dict'])
+        self.best_mAP = checkpoint['best_mAP']
+        self.results = checkpoint.get('results', [])
+        
+        # returning the next epoch to start from
+        return checkpoint['epoch']
 
     def cleanup(self):
         """Purges hardware registers and resets Python cache explicitly."""
