@@ -1,6 +1,5 @@
 import gc
 import os
-from pathlib import Path
 import torch
 import torch.nn as nn
 from torch.amp import autocast, GradScaler
@@ -14,15 +13,19 @@ class ModelTrainer:
     """
 
     def __init__(
-        self, model: nn.Module, train_loader, val_loader, lr: float = 0.005, checkpoint_file: Path = "./models/checkpoints"
+        self, model: nn.Module, train_loader, val_loader, lr: float = 0.005, checkpoint_path: str = "./models/checkpoints", checkpoint_name: str = "best_model.pt"
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        
         self.model = model.to(self.device)
         self.train_loader = train_loader
         self.val_loader = val_loader
-        self.checkpoint_file = checkpoint_file
-
+        # holds name of the checkpoint
+        self.checkpoint_name = checkpoint_name
+        self.checkpoint_path = checkpoint_path
+        os.makedirs(self.checkpoint_path, exist_ok=True)
+        # full checkpoint file path 
+        self.checkpoint_file = os.path.join(self.checkpoint_path, self.checkpoint_name)
         # optimizer
         self.optimizer = torch.optim.SGD(
             self.model.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005
@@ -31,6 +34,7 @@ class ModelTrainer:
 
         # Metric state tracking
         self.results = []
+        self.best_mAP = 0
 
     def run_epoch(self, epoch_idx: int) -> dict:
         """Runs one full training and validation pass."""
@@ -45,7 +49,7 @@ class ModelTrainer:
         # validation mAP
         mAP_50 = self._validate_one_epoch()
         print(f"[Val Complete]   mAP@0.50:     {mAP_50:.4f}")
-
+        
         epoch_summary = {
             "epoch": epoch_idx + 1,
             "train_loss": avg_train_loss,
@@ -53,6 +57,9 @@ class ModelTrainer:
             "mAP_50": mAP_50,
         }
         self.results.append(epoch_summary)
+        
+        self._save_checkpoint(epoch=epoch_idx + 1, current_mAP=mAP_50)
+        
         return epoch_summary
 
     def _train_one_epoch(self) -> float:
@@ -144,11 +151,10 @@ class ModelTrainer:
         # saving best model
         if current_mAP > self.best_mAP:
             self.best_mAP = current_mAP
-            best_path = os.path.join(self.checkpoint_file")
+            best_path = self.checkpoint_file
             torch.save(checkpoint_data, best_path)
             print(f"New best model saved with mAP@0.50: {self.best_mAP:.4f}")
             
-            print(f"New best model saved with mAP@0.50: {self.best_mAP:.4f}")
     
     def load_checkpoint(self, checkpoint_file: str):
         """Loads a saved state dictionary back into memory to resume training."""

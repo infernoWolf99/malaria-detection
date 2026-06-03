@@ -10,5 +10,9 @@ hyperparameters:
   num_workers: 2
   pin_memory: False
   num_epochs: 5
+checkpoints:
+  path: '/checkpoints/'
+  name: 'retina_twbc_best_model'
+
 
 

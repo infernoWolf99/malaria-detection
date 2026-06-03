@@ -1,17 +1,12 @@
 import argparse
-import os, random, wandb
+import os
+import wandb
 from pathlib import Path
-import torch
 import yaml
 from data_loader import DataPrep
 from models import RetinaNet
 from train import ModelTrainer
 
-
-# wandb api key
-os.environ["WANDB_API_KEY"] = (
-    "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"
-)
 
 def get_data_dir(path: Path = Path("../data")) -> Path:
     """
@@ -31,10 +26,10 @@ def get_data_dir(path: Path = Path("../data")) -> Path:
 def main():
     parser = argparse.ArgumentParser(description="Malaria Detection Training Pipeline")
     parser.add_argument(
-        "--config", 
-        type=str, 
-        required=True, 
-        help="Path to the model yaml config file (e.g., config/model_resnet50.yaml)"
+        "--config",
+        type=str,
+        required=True,
+        help="Path to the model yaml config file (e.g., config/model_resnet50.yaml)",
     )
     args = parser.parse_args()
 
@@ -58,9 +53,7 @@ def main():
             "epochs": job_config["hyperparameters"]["num_epochs"],
         },
     )
-    run.define_metric("epoch/train_loss", summary="min")
-    run.define_metric("epoch/val_loss", summary="min")
-    
+
     #  data paths
     data_dir = get_data_dir(path=job_config["data"]["path"])
 
@@ -72,27 +65,41 @@ def main():
         num_workers=job_config["hyperparameters"]["num_workers"],
     )
 
-    train, val, test = t_wbc_data.build_loaders();
+    train, val, test = t_wbc_data.build_loaders()
 
     print("Beginning execution pipeline setup...")
+
     retina_wrapper = RetinaNet(
         num_classes=job_config["model"]["num_classes"], pre_trained=False
     )
 
     retina_model = retina_wrapper.get_model()
 
-    t_wbc_trainer = ModelTrainer(model = retina_model, train_loader=train, val_loader=val, lr=job_config['hyperparameters']['lr'])
+    checkpoint_path = job_config["checkpoints"]["path"]
+    checkpoint_name = job_config["checkpoints"]["name"]
+    checkpoint_file = os.path.join(checkpoint_path, checkpoint_name)
 
-    num_epochs = job_config['hyperparameters']['num_epochs']
+    t_wbc_trainer = ModelTrainer(
+        model=retina_model,
+        train_loader=train,
+        val_loader=val,
+        lr=job_config["hyperparameters"]["lr"],
+        checkpoint_name=checkpoint_name,
+        checkpoint_path=checkpoint_path,
+    )
 
-    for epoch in range(num_epochs):
+    start_epoch = t_wbc_trainer.load_checkpoint(checkpoint_file=checkpoint_file)
+
+    num_epochs = job_config["hyperparameters"]["num_epochs"]
+
+    for epoch in range(start_epoch, num_epochs):
         results = t_wbc_trainer.run_epoch(epoch_idx=epoch)
 
         run.log(
             {
                 "epoch": results["epoch"],
-                "epoch/train_loss": results["train_loss"],
-                "epoch/val_loss": results["val_loss"],
+                "train_loss": results["train_loss"],
+                "val_loss": results["val_loss"],
                 "mAP_50": results["mAP_50"],
             }
         )
@@ -100,6 +107,7 @@ def main():
         print("EPOCH RESULTS", results)
 
     run.finish()
+
 
 if __name__ == "__main__":
     main()
