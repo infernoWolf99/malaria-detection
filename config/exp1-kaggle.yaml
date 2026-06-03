@@ -3,7 +3,7 @@ data:
   path: '/kaggle/input/datasets/sethkyei/malaria-mini-dataset/data/trophozoite-wbc'
 model:
   num_classes: 3
-  pre_trained: false
+  pre_trained: False
 hyperparameters:
   batch_size: 2
   lr: 0.005

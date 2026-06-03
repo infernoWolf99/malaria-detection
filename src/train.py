@@ -1,4 +1,6 @@
 import gc
+import os
+from pathlib import Path
 import torch
 import torch.nn as nn
 from torch.amp import autocast, GradScaler
@@ -12,13 +14,14 @@ class ModelTrainer:
     """
 
     def __init__(
-        self, model: nn.Module, train_loader, val_loader, lr: float = 0.005
+        self, model: nn.Module, train_loader, val_loader, lr: float = 0.005, checkpoint_file: Path = "./models/checkpoints"
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.model = model.to(self.device)
         self.train_loader = train_loader
         self.val_loader = val_loader
+        self.checkpoint_file = checkpoint_file
 
         # optimizer
         self.optimizer = torch.optim.SGD(
@@ -122,6 +125,28 @@ class ModelTrainer:
 
         final_metrics = metric_evaluator.compute()
         return final_metrics["map_50"].item()
+
+    def _save_checkpoint(self, epoch: int, current_mAP: float):
+        """Bundles and saves the execution state to disk."""
+        checkpoint_data = {
+            "epoch": epoch,
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
+            "scaler_state_dict": self.scaler.state_dict(),
+            "best_mAP": max(current_mAP, self.best_mAP),
+            "results": self.results,
+        }
+
+        
+        latest_path = self.checkpoint_file
+        torch.save(checkpoint_data, latest_path)
+
+        # saving best model
+        if current_mAP > self.best_mAP:
+            self.best_mAP = current_mAP
+            best_path = os.path.join(self.checkpoint_file")
+            torch.save(checkpoint_data, best_path)
+            print(f"New best model saved with mAP@0.50: {self.best_mAP:.4f}")
 
     def cleanup(self):
         """Purges hardware registers and resets Python cache explicitly."""
