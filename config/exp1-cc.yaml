@@ -5,10 +5,10 @@ model:
   num_classes: 3
   pre_trained: False
 hyperparameters:
-  batch_size: 2
+  batch_size: 4
   lr: 0.005
-  num_workers: 2
-  pin_memory: False
+  num_workers: 4
+  pin_memory: True
   num_epochs: 5
 checkpoints:
   path: '/checkpoints/'
